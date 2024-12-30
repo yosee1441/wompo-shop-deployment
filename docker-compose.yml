@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  wompo-postgres:
+    image: postgres:latest
+    container_name: wompo-postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=${BACK_POSTGRES_DB}
+      - POSTGRES_USER=${BACK_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${BACK_POSTGRES_PASSWORD}
+    ports:
+      - '5432:5432'
+    volumes:
+      - wompo-postgres-data:/var/lib/postgresql/data
+
+  api-wompo-shop:
+    build:
+      context: ./api-wompo-shop
+      dockerfile: dockerfile
+    image: api-wompo-shop
+    container_name: api-wompo-shop
+    restart: always
+    depends_on:
+      - wompo-postgres
+    ports:
+      - "${BACK_PORT}:8080"
+    environment:
+      - PORT=${BACK_PORT}
+      - URL_BASE=${BACK_URL_BASE}
+      - API_KEY_PUB_WOMPO=${BACK_API_KEY_PUB_WOMPO}
+      - API_KEY_PRV_WOMPO=${BACK_API_KEY_PRV_WOMPO}
+      - API_KEY_EVENTS_WOMPO=${BACK_API_KEY_EVENTS_WOMPO}
+      - API_KEY_INTEGRITY_WOMPO=${BACK_API_KEY_INTEGRITY_WOMPO}
+
+  front-wompo-shop:
+    build:
+      context: ./front-wompo-shop
+      dockerfile: dockerfile
+    image: front-wompo-shop
+    container_name: front-wompo-shop
+    ports:
+      - "80:80"
+    depends_on:
+      - api-wompo-shop
+    environment:
+      - PORT=${FRONT_PORT}
+      - FRONT_URL_BASE=${FRONT_URL_BASE}
+
+volumes:
+  wompo-postgres-data:
+    driver: local
